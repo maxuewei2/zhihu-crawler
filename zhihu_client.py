@@ -49,6 +49,8 @@ Default_Header = {'X-Requested-With': 'XMLHttpRequest',
                   'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; '
                                 'rv:39.0) Gecko/20100101 Firefox/39.0',
                   'Host': 'www.zhihu.com'}
+
+
 class ZhihuClient:
 
     """知乎客户端类，内部维护了自己专用的网络会话，可用cookies或账号密码登录."""
@@ -129,7 +131,8 @@ class ZhihuClient:
                 cookies = f.read()
         cookies_dict = json.loads(cookies)
         self._session.cookies.update(cookies_dict)
-        #return self.session()
+        # return self.session()
+
     def login_in_terminal(self, need_captcha=False, use_getpass=True):
         """不使用cookies，在终端中根据提示登陆知乎
         :param bool need_captcha: 是否要求输入验证码，如果登录失败请设为 True
@@ -166,7 +169,7 @@ class ZhihuClient:
         else:
             print(msg)
 
-        return email,cookies
+        return email, cookies
 
     def create_cookies(self, need_captcha=False, use_getpass=True):
         """在终端中执行登录流程，将 cookies 存放在文件中以便后续使用
@@ -175,16 +178,20 @@ class ZhihuClient:
             如果在某些 Windows IDE 中无法正常输入密码，请把此参数设置为 False 试试
         :return:
         """
-        email,cookies_str = self.login_in_terminal(need_captcha, use_getpass)
+        email, cookies_str = self.login_in_terminal(need_captcha, use_getpass)
         if cookies_str:
             with open('cookies/'+email+'.json', 'w') as f:
                 f.write(cookies_str)
             print('cookies file created.')
         else:
             print('can\'t create cookies.')
-if __name__=='__main__':
-    if sys.version_info[0]==3:
-        try: raw_input = input
-        except NameError: pass
-    zh=ZhihuClient(cookies=None)
-    zh.create_cookies(need_captcha=True,use_getpass=True)
+
+
+if __name__ == '__main__':
+    if sys.version_info[0] == 3:
+        try:
+            raw_input = input
+        except NameError:
+            pass
+    zh = ZhihuClient(cookies=None)
+    zh.create_cookies(need_captcha=True, use_getpass=True)
