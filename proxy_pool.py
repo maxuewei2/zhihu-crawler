@@ -5,6 +5,7 @@ import threading
 import traceback
 import time
 import urllib2
+import logging
 
 class proxy_pool:
     def __init__(self,timeout=5):
@@ -19,7 +20,7 @@ class proxy_pool:
         self.add_proxy_thread=threading.Thread(target=self.add_proxies)    #爬取代理网站，获取代理的线程
         self.add_proxy_thread.daemon=True        #设置该线程为daemon，即主程序退出后，该线程也退出
         self.add_proxy_thread.start()
-        print('add proxy start done')
+        logging.info('add proxy start done')
         #self.add_proxy_thread.join()
         
     def get_size(self):
@@ -54,9 +55,9 @@ class proxy_pool:
                 p=self.proxy_list[self.index]
                 self.index+=1
                 self.add_times(p)
-                print self.index,
+                logging.debug(str(self.index))
                 return p
-            print 'None-proxy',       #代理列表为空则返回None
+            logging.warning('None-proxy')       #代理列表为空则返回None
             return None
         except Exception,e:
             pass 
@@ -82,10 +83,10 @@ class proxy_pool:
                     continue
                 if t['wrong']/float(t['times'])>0.5:    #出错率大于50%，则移除
                     self.remove(p)
-                print('remove success')
+                logging.debug('remove success')
         except Exception,e:
             traceback.print_exc()
-            print('remove wrong error occured.')
+            logging.debug('remove wrong error occured.')
             
     def test_proxy(self,ip,port):     #测试爬取到的一个代理是否可用
         sess = requests.session() 
@@ -112,7 +113,7 @@ class proxy_pool:
         try:
             page_response=session.get("http://www.ip181.com/daili/"+str(page_num)+".html",timeout=self.timeout)
         except Exception,e:
-            print('can not get ip181 page '+str(page_num))
+            logging.warning('can not get ip181 page '+str(page_num))
             return 
         #用正则表达式解析页面，获取代理列表
         pros=re.findall(r'<tr[^>]+?>\s+<td>([^<]+?)</td>\s+<td>(\d+)</td>\s+<td>[^<]+?</td>\s+<td>HTTP,HTTPS</td>.+?</tr>',page_response.text,re.S)
@@ -138,6 +139,6 @@ class proxy_pool:
                     self.remove_wrong()
                 if (itera*sleep_seconds)%(20)==0:
                     self.add_page_proxies(itera/4+1)                
-                    print('proxies num: '+str(len(self.proxy_list)))
+                    logging.debug('proxies num: '+str(len(self.proxy_list)))
                 time.sleep(sleep_seconds)
 

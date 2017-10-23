@@ -1,5 +1,5 @@
 #!/bin/bash
 while true
 do 
-python zh_crawler.py
+python2 zh_crawler.py
 done

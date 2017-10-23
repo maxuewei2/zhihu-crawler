@@ -164,7 +164,7 @@ class ZhihuClient:
         if code == 0:
             print('login successfully')
         else:
-            print('login failed, reason: {0}'.format(msg).encode('utf-8'))
+            print(msg)
 
         return email,cookies
 

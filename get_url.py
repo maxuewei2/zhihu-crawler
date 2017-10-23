@@ -7,6 +7,7 @@ import time
 import traceback
 import urllib2
 import requests
+import logging
 
 class get_url:
     def __init__(self,proxy_pool=None,session=None):
@@ -24,12 +25,12 @@ class get_url:
             except Exception, e:  
                 #traceback.print_exc()
                 self.proxy_pool.add_wrong(proxy)
-                print('invalid-proxy')
+                logging.warning('invalid-proxy')
                 continue
             try:
                 return response.text
             except Exception,e:
-                print('get-response-text-exception')
+                logging.warning('get-response-text-exception')
                 traceback.print_exc()
         raise Exception('my_exception',url)
 

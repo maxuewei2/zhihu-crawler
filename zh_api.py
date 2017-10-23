@@ -9,6 +9,7 @@ import traceback
 import Queue
 import proxy_pool
 import get_url
+import logging
 
 class ZhihuAPI:
     """
@@ -35,8 +36,8 @@ class ZhihuAPI:
                     continue
                 return j
             except Exception,e:
-                print('url-load-json-error')
-        print('can-not-get-'+url_type)
+                logging.error('url-load-json-error')
+        logging.error('can-not-get-%s' %url_type)
         return None
         #raise Exception('my_exception')
         
@@ -93,7 +94,7 @@ class ZhihuAPI:
             try:
                 data.extend(a[1]['data'])
             except Exception,e:
-                print('get-None-data')
+                logging.error('get-None-data')
                 pass
         return data
     
@@ -123,8 +124,8 @@ class ZhihuAPI:
             topic_count=profile["following_topic_count"]
         except Exception,e:
             traceback.print_exc()
-            print(profile)
-            print('profile-error')
+            logging.error(profile)
+            logging.error('profile-error')
             #exit(0)
             uqueue.put((user_id,None))
             return
@@ -146,7 +147,7 @@ class ZhihuAPI:
         while not queue.empty():
             ret.append(queue.get())
         if len(ret)!=3:
-            print('not-get-user-all-error')
+            logging.error('not-get-user-all-error')
             return None
         ret=sorted(ret,key=lambda a:a[0])
         user_data={}

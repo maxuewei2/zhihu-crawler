@@ -1,5 +1,5 @@
 
-# zhihu-crawler
+# [zhihu-crawler](https://github.com/maxuewei2/zhihu-crawler)
 一个简单的知乎爬虫，通过 API 获取信息。API 则是通过手动分析知乎网站网络交互过程获取。
 
 
@@ -25,6 +25,7 @@
 | zh_api.py| 给定用户 id ，获取用户的各种信息
 | zh_crawler.py| 爬虫主程序，爬 100 个用户后退出
 | zhihu_client.py| 可用于登录帐号并生成保存有 cookie 的 json 文件
+| 分析知乎API.md| 简述通过网页分析`知乎 API`的方法
 
 ## 运行方法
 以下所用 python 均为 python 2，假定在 Windows 环境下。

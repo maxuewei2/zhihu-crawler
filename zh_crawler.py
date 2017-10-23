@@ -9,17 +9,16 @@ import threading
 import proxy_pool
 import Queue
 import traceback
+import logging
 
 id_queue=[]       #待获取的用户列表
 id_dict={}        #已获取的用户字典
 error_ids=[]      #获取出错的用户列表
-out=[]            #保存输出信息的字符串列表
 data_file_name=None    #数据文件名
 out_file_name=None     #输出信息文件名
 is_first=True      #是否是本轮获取的第一个用户
 
 def handle_user(zh_api,user_id,uq):     #给定一个user_id，获取用户信息，并以宽度遍历扩展id_queue
-    global out
     global data_file_name
     global id_queue
     global id_dict
@@ -32,8 +31,7 @@ def handle_user(zh_api,user_id,uq):     #给定一个user_id，获取用户信�
     if user_data==None:
         error_ids.append(user_id)
         return 
-    print('\t'+user_id)
-    out.append(str('\t'+user_id))
+    logging.info('get_user\t%s' %user_id)
     user_followees=user_data['followee']   
     followee_list=[f['url_token'] for f in user_followees ]  #获取用户的关注列表
     new_follow_list=list(set(followee_list)-set(id_dict))   #取关注列表中未被获取过的部分
@@ -72,11 +70,11 @@ def write_state():
     global error_ids
     id_queue=remove_duplicate_keep_order(id_queue)
     with open('state/id_queue.txt','w') as queue_file:
-        queue_file.write(json.dumps(id_queue))
+        json.dump(id_queue,queue_file,indent=1)
     with open('state/id_dict.txt','w') as dict_file:
-        dict_file.write(json.dumps(id_dict))
+        json.dump(id_dict,dict_file,indent=1)
     with open('state/error_ids.txt','w') as error_file:
-        error_file.write(json.dumps(error_ids))
+        json.dump(error_ids,error_file,indent=1)
 
 #从文件中读取id_dict和id_queue，即恢复之前爬取的状态，以从该状态继续        
 def load_state():
@@ -84,15 +82,14 @@ def load_state():
     global id_dict
     global error_ids
     with open('state/id_queue.txt','r') as queue_file:
-        id_queue=json.loads(queue_file.read())
+        id_queue=json.load(queue_file)
     with open('state/id_dict.txt','r') as dict_file:
-        id_dict=json.loads(dict_file.read())
+        id_dict=json.load(dict_file)
     with open('state/error_ids.txt','r') as error_file:
-        error_ids=json.loads(error_file.read())
+        error_ids=json.load(error_file)
     
     
 def main(zh_api,user_batch_size,sleep_seconds_between_user):
-    global out
     global data_file_name
     global out_file_name
     global is_first
@@ -103,12 +100,17 @@ def main(zh_api,user_batch_size,sleep_seconds_between_user):
     load_state()
     num=0
     data_file_name='data/data_'+start_time+'.txt'
+    
     out_file_name='out/out_'+start_time+'.txt'
+    outLogFileHandler = logging.FileHandler(out_file_name,'w')
+    outLogFileHandler.addFilter(StrFilter('StartsWith','get_user'))
+    formatter = logging.Formatter('%(asctime)s  %(message)s')
+    outLogFileHandler.setFormatter(formatter)
+    logging.getLogger().addHandler(outLogFileHandler)
+
     with open(data_file_name,'w') as f:
         f.write('{}')
-    with open(out_file_name,'w') as f:
-        f.write('')
-    print(start_time)
+    logging.info("get_user\tstart at %s" %start_time)
     lnum=0
     while True:
         uq=Queue.Queue()
@@ -133,11 +135,7 @@ def main(zh_api,user_batch_size,sleep_seconds_between_user):
         if num-lnum>=10:
             lnum=num
             out_str='crawl num= '+str(len(id_dict))+'\n'+'queue num= '+str(len(id_queue))
-            print(out_str)
-            out.append(out_str)
-            with open(out_file_name,'a') as out_file:
-                out_file.write('\n'.join(out))
-            out=[]
+            logging.info("get_user\t"+out_str)
             write_state()
         if num>=100:
             write_state()
@@ -154,9 +152,37 @@ def main(zh_api,user_batch_size,sleep_seconds_between_user):
             else:
                 break
         
+class LevelFilter(logging.Filter):
+    def __init__(self, level):
+        self.level = level
+
+    def filter(self, record):
+        return record.levelno == self.level
+
+
+class StrFilter(logging.Filter):
+    def __init__(self,filter_flag,filter_str):
+        self.filter_flag=filter_flag
+        self.filter_str=filter_str
+
+    def filter(self, record):
+        if self.filter_flag=='NotInclude':
+            return self.filter_str not in record.getMessage()
+        if self.filter_flag=='StartsWith':
+            return record.getMessage().startswith(self.filter_str)
+
 
 if __name__ == '__main__' :
-    print('================================================')
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    printLogFileHandler = logging.StreamHandler()
+    printLogFileHandler.addFilter(StrFilter('NotInclude','GET'))
+    printLogFileHandler.addFilter(LevelFilter(logging.DEBUG))
+    formatter = logging.Formatter('%(asctime)s  %(message)s')
+    printLogFileHandler.setFormatter(formatter)
+    logging.getLogger().addHandler(printLogFileHandler)
+    
+    logging.info('================================================')
     proxy_pool=proxy_pool.proxy_pool()
     #从x.txt中读取数字，以确定该使用哪个cookie文件，即以哪个账户登录
     jsonfilenames=os.listdir('cookies')
@@ -172,7 +198,7 @@ if __name__ == '__main__' :
         f.write(str(jx+1))
     jl=len(jsonfilenames)
     jfname=jsonfilenames[jx%jl]
-    print('use '+jfname)
+    logging.info('get_user\tuse '+jfname)
     
     """ 
     调节此处的get_batch_size、sleep_seconds_between_batch、user_batch_size、sleep_seconds_between_user可调整爬取速度
